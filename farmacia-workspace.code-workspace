@@ -1,0 +1,23 @@
+{
+  "folders": [
+    {
+      "name": "farmacia-service",
+      "path": "farmacia-service"
+    },
+    {
+      "name": "api-gateway",
+      "path": "api-gateway"
+    },
+    {
+      "name": "eureka-server",
+      "path": "eureka-server"
+    }
+  ],
+  "settings": {
+    "spring-boot.dashboard.scanFolders": [
+      "farmacia-service",
+      "api-gateway",
+      "eureka-server"
+    ]
+  }
+}
