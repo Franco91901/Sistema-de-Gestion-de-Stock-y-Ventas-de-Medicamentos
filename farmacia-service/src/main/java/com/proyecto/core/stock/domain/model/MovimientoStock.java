@@ -1,6 +1,5 @@
 package com.proyecto.core.stock.domain.model;
 
-import com.proyecto.auth.domain.model.Usuario;
 import com.proyecto.core.lote.domain.model.Lote;
 import com.proyecto.core.medicamento.domain.model.Medicamento;
 import com.proyecto.core.sede.domain.model.Sede;
@@ -41,9 +40,8 @@ public class MovimientoStock {
     @Column(name = "fecha", nullable = false)
     private LocalDateTime fecha = LocalDateTime.now();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario")
-    private Usuario usuario;
+    @Column(name = "id_usuario")
+    private Long idUsuario;
 
     @Column(name = "observacion", length = 255)
     private String observacion;

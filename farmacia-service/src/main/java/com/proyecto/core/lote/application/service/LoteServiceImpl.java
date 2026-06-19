@@ -1,6 +1,5 @@
 package com.proyecto.core.lote.application.service;
 
-import com.proyecto.auth.domain.model.Usuario;
 import com.proyecto.core.lote.application.dto.LoteRequestDTO;
 import com.proyecto.core.lote.application.dto.LoteResponseDTO;
 import com.proyecto.core.lote.application.dto.LoteStockResponseDTO;
@@ -215,8 +214,6 @@ public class LoteServiceImpl implements LoteService {
         return loteRepository.findByCodigoLote(codigoLote).isPresent();
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
-
     private Lote findLoteOrThrow(Long idLote) {
         return loteRepository.findById(idLote)
                 .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.LOTE_NO_ENCONTRADO));
@@ -224,8 +221,8 @@ public class LoteServiceImpl implements LoteService {
 
     private void registrarMovimiento(Medicamento medicamento, Sede sede, Lote lote,
                                      TipoMovimiento tipo, Integer cantidad, String observacion) {
-        Usuario usuario = null;
-        try { usuario = authContext.getUsuario(); } catch (Exception ignored) {}
+        Long idUsuario = null;
+        try { idUsuario = authContext.getIdUsuario(); } catch (Exception ignored) {}
 
         MovimientoStock mov = new MovimientoStock();
         mov.setMedicamento(medicamento);
@@ -234,7 +231,7 @@ public class LoteServiceImpl implements LoteService {
         mov.setTipo(tipo);
         mov.setCantidad(cantidad);
         mov.setFecha(LocalDateTime.now());
-        mov.setUsuario(usuario);
+        mov.setIdUsuario(idUsuario);
         mov.setObservacion(observacion);
         movimientoStockRepository.save(mov);
     }

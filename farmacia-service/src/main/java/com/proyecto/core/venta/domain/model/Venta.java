@@ -1,6 +1,5 @@
 package com.proyecto.core.venta.domain.model;
 
-import com.proyecto.auth.domain.model.Usuario;
 import com.proyecto.core.sede.domain.model.Sede;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,9 +28,11 @@ public class Venta {
     @JoinColumn(name = "id_sede", nullable = false)
     private Sede sede;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario", nullable = false)
-    private Usuario usuario;
+    @Column(name = "id_usuario")
+    private Long idUsuario;
+
+    @Column(name = "nombre_usuario", length = 200)
+    private String nombreUsuario;
 
     @Column(name = "fecha", nullable = false)
     private LocalDateTime fecha = LocalDateTime.now();

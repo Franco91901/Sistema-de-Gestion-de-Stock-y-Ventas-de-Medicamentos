@@ -115,7 +115,7 @@ public class GestorController {
 
         OrdenDetalleDTO dto = new OrdenDetalleDTO(
             orden.getIdOrden(),
-            orden.getUsuario() != null ? orden.getUsuario().getNombre() : "",
+            orden.getNombreUsuario() != null ? orden.getNombreUsuario() : "",
             orden.getTipo() != null ? orden.getTipo().name() : null,
             orden.getEstado() != null ? orden.getEstado().name() : null,
             orden.getFecha(),

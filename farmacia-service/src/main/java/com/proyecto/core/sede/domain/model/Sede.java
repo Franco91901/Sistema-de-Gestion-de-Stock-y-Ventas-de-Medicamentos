@@ -1,7 +1,6 @@
 package com.proyecto.core.sede.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.proyecto.auth.domain.model.Usuario;
 import com.proyecto.core.medicamento.domain.model.MedicamentoSede;
 import com.proyecto.core.notificacion.domain.model.Notificacion;
 import jakarta.persistence.*;
@@ -38,9 +37,5 @@ public class Sede {
     @OneToMany(mappedBy = "sede", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Notificacion> notificaciones = new ArrayList<>();
-
-    @OneToMany(mappedBy = "sede", fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<Usuario> usuarios = new ArrayList<>();
 
 }

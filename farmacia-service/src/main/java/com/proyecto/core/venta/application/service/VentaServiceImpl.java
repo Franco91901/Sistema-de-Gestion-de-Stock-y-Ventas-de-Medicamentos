@@ -1,6 +1,5 @@
 package com.proyecto.core.venta.application.service;
 
-import com.proyecto.auth.domain.model.Usuario;
 import com.proyecto.core.lote.domain.model.Lote;
 import com.proyecto.core.lote.domain.repository.LoteRepository;
 import com.proyecto.core.medicamento.domain.model.Medicamento;
@@ -46,11 +45,12 @@ public class VentaServiceImpl implements VentaService {
     @Transactional
     public VentaResponseDTO procesarVenta(VentaRequestDTO request) {
         Long idSede = authContext.getIdSede();
-        Usuario usuario = authContext.getUsuario();
+        Long idUsuario = authContext.getIdUsuario();
+        String nombreUsuario = authContext.getNombreUsuario();
+
         Sede sede = sedeRepository.findById(idSede)
                 .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.SEDE_NO_ENCONTRADA));
 
-        // Validación previa de stock para todos los ítems (fail-fast)
         for (VentaItemRequestDTO item : request.items()) {
             Integer stock = loteRepository.sumStockByMedicamentoAndSede(item.idMedicamento(), idSede);
             if (stock == null || stock < item.cantidad()) {
@@ -63,7 +63,8 @@ public class VentaServiceImpl implements VentaService {
 
         Venta venta = new Venta();
         venta.setSede(sede);
-        venta.setUsuario(usuario);
+        venta.setIdUsuario(idUsuario);
+        venta.setNombreUsuario(nombreUsuario);
         venta.setFecha(LocalDateTime.now());
 
         BigDecimal total = BigDecimal.ZERO;
@@ -73,7 +74,6 @@ public class VentaServiceImpl implements VentaService {
             Medicamento medicamento = medicamentoRepository.findById(item.idMedicamento())
                     .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.MEDICAMENTO_NO_ENCONTRADO));
 
-            // Descuento FIFO: lotes ordenados por fecha de caducidad más próxima
             List<Lote> lotesFIFO = loteRepository.findLotesDisponiblesFIFO(item.idMedicamento(), idSede);
             int restante = item.cantidad();
 
@@ -83,11 +83,10 @@ public class VentaServiceImpl implements VentaService {
                 lote.setStockLote(lote.getStockLote() - aDeducir);
                 loteRepository.save(lote);
                 registrarMovimiento(medicamento, sede, lote, TipoMovimiento.SALIDA, aDeducir,
-                        "Venta - lote: " + lote.getCodigoLote());
+                        "Venta - lote: " + lote.getCodigoLote(), idUsuario);
                 restante -= aDeducir;
             }
 
-            // Actualizar stock consolidado en MedicamentoSede
             Integer nuevoStock = loteRepository.sumStockByMedicamentoAndSede(item.idMedicamento(), idSede);
             medicamentoSedeRepository.findByMedicamentoIdMedicamentoAndSedeIdSede(item.idMedicamento(), idSede)
                     .ifPresent(ms -> {
@@ -122,10 +121,7 @@ public class VentaServiceImpl implements VentaService {
     }
 
     private void registrarMovimiento(Medicamento medicamento, Sede sede, Lote lote,
-                                     TipoMovimiento tipo, Integer cantidad, String observacion) {
-        Usuario usuario = null;
-        try { usuario = authContext.getUsuario(); } catch (Exception ignored) {}
-
+                                     TipoMovimiento tipo, Integer cantidad, String observacion, Long idUsuario) {
         MovimientoStock mov = new MovimientoStock();
         mov.setMedicamento(medicamento);
         mov.setSede(sede);
@@ -133,20 +129,12 @@ public class VentaServiceImpl implements VentaService {
         mov.setTipo(tipo);
         mov.setCantidad(cantidad);
         mov.setFecha(LocalDateTime.now());
-        mov.setUsuario(usuario);
+        mov.setIdUsuario(idUsuario);
         mov.setObservacion(observacion);
         movimientoStockRepository.save(mov);
     }
 
     private VentaResponseDTO toResponseDTO(Venta venta) {
-        String nombreUsuario = "";
-        if (venta.getUsuario() != null) {
-            nombreUsuario = venta.getUsuario().getNombre();
-            if (venta.getUsuario().getApellido() != null) {
-                nombreUsuario += " " + venta.getUsuario().getApellido();
-            }
-        }
-
         List<DetalleVentaResponseDTO> detallesDTO = venta.getDetalles().stream()
                 .map(d -> new DetalleVentaResponseDTO(
                         d.getIdDetalle(),
@@ -161,7 +149,7 @@ public class VentaServiceImpl implements VentaService {
                 venta.getFecha(),
                 venta.getTotal(),
                 venta.getSede() != null ? venta.getSede().getNombre() : "",
-                nombreUsuario.trim(),
+                venta.getNombreUsuario() != null ? venta.getNombreUsuario() : "",
                 detallesDTO
         );
     }

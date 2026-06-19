@@ -10,7 +10,6 @@ import com.proyecto.core.sede.domain.model.Sede;
 import com.proyecto.core.notificacion.domain.model.Notificacion;
 import com.proyecto.core.orden.domain.model.Orden;
 import com.proyecto.core.orden.domain.model.DetalleOrden;
-import com.proyecto.auth.domain.model.Usuario;
 import com.proyecto.core.medicamento.domain.repository.MedicamentoRepository;
 import com.proyecto.core.medicamento.domain.repository.MedicamentoSedeRepository;
 import com.proyecto.core.notificacion.application.mapper.NotificacionMapper;
@@ -19,12 +18,11 @@ import com.proyecto.core.orden.domain.repository.OrdenRepository;
 import com.proyecto.core.orden.domain.repository.DetalleOrdenRepository;
 import com.proyecto.core.sede.domain.repository.SedeRepository;
 import com.proyecto.core.lote.domain.repository.LoteRepository;
-import com.proyecto.auth.domain.repository.UsuarioRepository;
 import com.proyecto.core.stock.application.service.FarmaceuticoConstants;
 import com.proyecto.shared.exception.EntityNotFoundException;
 import com.proyecto.shared.exception.ExceptionConstants;
+import com.proyecto.shared.security.AuthContext;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,9 +42,8 @@ public class GestorServiceImpl implements GestorService {
     private final MedicamentoSedeRepository medicamentoSedeRepository;
     private final SedeRepository sedeRepository;
     private final LoteRepository loteRepository;
-    private final UsuarioRepository usuarioRepository;
     private final NotificacionMapper notificacionMapper;
-
+    private final AuthContext authContext;
 
     @Override
     public Integer obtenerStockPorMedicamento(Long idMedicamento) {
@@ -69,7 +66,6 @@ public class GestorServiceImpl implements GestorService {
     public List<Sede> listarSedes() {
         return sedeRepository.findAll();
     }
-
 
     @Override
     public List<NotificacionResponseDTO> obtenerNotificacionesConNombres() {
@@ -107,7 +103,6 @@ public class GestorServiceImpl implements GestorService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     @Transactional
     public Orden generarOrdenDesdeNotificacion(Long idGestor, Long idNotificacion, Integer cantidadSolicitada) {
@@ -118,11 +113,9 @@ public class GestorServiceImpl implements GestorService {
         Notificacion notif = notificacionRepository.findById(idNotificacion)
             .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.NOTIFICACION_NO_ENCONTRADA));
 
-        Usuario usuario = usuarioRepository.findById(idGestor)
-            .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.USUARIO_NO_ENCONTRADO));
-
         Orden orden = new Orden();
-        orden.setUsuario(usuario);
+        orden.setIdUsuario(idGestor);
+        orden.setNombreUsuario(authContext.getNombreUsuario());
         orden.setSede(notif.getSede());
         orden.setTipo(com.proyecto.core.orden.domain.model.TipoOrden.COMPRA);
         orden.setEstado(com.proyecto.core.orden.domain.model.EstadoOrden.PENDIENTE);
@@ -145,20 +138,19 @@ public class GestorServiceImpl implements GestorService {
     @Override
     @Transactional
     public Orden crearOrden(com.proyecto.core.orden.application.dto.OrdenRequestDTO dto, Long idGestor) {
-        Usuario usuario = usuarioRepository.findById(idGestor)
-            .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.USUARIO_NO_ENCONTRADO));
-        com.proyecto.core.sede.domain.model.Sede sede = sedeRepository.findById(dto.idSede())
+        Sede sede = sedeRepository.findById(dto.idSede())
             .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.SEDE_NO_ENCONTRADA));
 
         Orden orden = new Orden();
-        orden.setUsuario(usuario);
+        orden.setIdUsuario(idGestor);
+        orden.setNombreUsuario(authContext.getNombreUsuario());
         orden.setSede(sede);
         orden.setTipo(com.proyecto.core.orden.domain.model.TipoOrden.valueOf(dto.tipo()));
         orden.setEstado(com.proyecto.core.orden.domain.model.EstadoOrden.PENDIENTE);
         orden.setFecha(LocalDateTime.now());
 
         if (dto.idSedeDestino() != null) {
-            com.proyecto.core.sede.domain.model.Sede sedeDestino = sedeRepository.findById(dto.idSedeDestino())
+            Sede sedeDestino = sedeRepository.findById(dto.idSedeDestino())
                 .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.SEDE_NO_ENCONTRADA));
             orden.setSedeDestino(sedeDestino);
         }
@@ -180,7 +172,6 @@ public class GestorServiceImpl implements GestorService {
     }
 
     @Override
-    @Transactional
     public void aprobarOrden(Long idOrden) {
         Orden orden = ordenRepository.findById(idOrden)
             .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.ORDEN_NO_ENCONTRADA));
@@ -192,7 +183,6 @@ public class GestorServiceImpl implements GestorService {
     }
 
     @Override
-    @Transactional
     public void rechazarOrden(Long idOrden) {
         Orden orden = ordenRepository.findById(idOrden)
             .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.ORDEN_NO_ENCONTRADA));
@@ -205,7 +195,7 @@ public class GestorServiceImpl implements GestorService {
 
     @Override
     public List<Orden> listarOrdenesPorGestor(Long idGestor) {
-        return ordenRepository.findByUsuarioIdUsuario(idGestor);
+        return ordenRepository.findByIdUsuario(idGestor);
     }
 
     @Override
@@ -214,7 +204,6 @@ public class GestorServiceImpl implements GestorService {
     }
 
     @Override
-    @Transactional
     public void eliminarOrden(Long idOrden) {
         detalleOrdenRepository.deleteByOrdenIdOrden(idOrden);
         ordenRepository.deleteById(idOrden);
@@ -250,6 +239,7 @@ public class GestorServiceImpl implements GestorService {
             .collect(Collectors.toList());
     }
 
+    @Override
     public String obtenerNombreMedicamento(Long idMedicamento) {
         return medicamentoRepository.findById(idMedicamento)
                 .map(Medicamento::getNombre)
@@ -270,15 +260,12 @@ public class GestorServiceImpl implements GestorService {
 
     @Override
     public List<Orden> obtenerOrdenesParaReporte(Long idGestor) {
-        return ordenRepository.findByUsuarioIdUsuario(idGestor);
+        return ordenRepository.findByIdUsuario(idGestor);
     }
-
-    // ========== OTROS ==========
 
     @Override
     public String obtenerNombreUsuario(Long idUsuario) {
-        Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
-        return usuario != null ? usuario.getNombre() : "Usuario no encontrado";
+        return "Usuario #" + idUsuario;
     }
 
     @Override

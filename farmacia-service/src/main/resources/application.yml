@@ -1,11 +1,15 @@
+server:
+  port: 8082
+
 spring:
   application:
-    name: Farmacia
+    name: FARMACIA
 
   datasource:
-    url: jdbc:mysql://localhost:3306/bd_DAW1
-    username: root
-    password: mysql
+    url: jdbc:postgresql://localhost:5432/bd_farmacia
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
@@ -16,12 +20,6 @@ spring:
   sql:
     init:
       mode: always
-
-application:
-  security:
-    jwt:
-      secret-key: farmacia-daw2-cibertec-proyecto-secret-key-2024-segura
-      expiration: 60
 
 eureka:
   client:

@@ -1,32 +1,40 @@
 package com.proyecto.shared.security;
 
-import com.proyecto.auth.domain.model.Usuario;
-import com.proyecto.shared.exception.EntityNotFoundException;
-import com.proyecto.shared.exception.ExceptionConstants;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class AuthContext {
 
-    public Usuario getUsuario() {
+    public String getEmail() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof Usuario usuario)) {
-            throw new EntityNotFoundException(ExceptionConstants.USUARIO_NO_ENCONTRADO);
-        }
-        return usuario;
+        if (auth == null) return null;
+        return auth.getName();
     }
 
     public Long getIdSede() {
-        Usuario usuario = getUsuario();
-        if (usuario.getSede() == null) {
-            throw new IllegalStateException("El usuario no tiene sede asignada");
-        }
-        return usuario.getSede().getIdSede();
+        return getDetail("idSede");
     }
 
     public Long getIdUsuario() {
-        return getUsuario().getIdUsuario();
+        return getDetail("idUsuario");
+    }
+
+    public String getNombreUsuario() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getDetails() instanceof Map<?, ?> details)) return null;
+        Object val = details.get("nombre");
+        return val instanceof String s ? s : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Long getDetail(String key) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getDetails() instanceof Map)) return null;
+        Object value = ((Map<String, Object>) auth.getDetails()).get(key);
+        return value instanceof Number n ? n.longValue() : null;
     }
 }

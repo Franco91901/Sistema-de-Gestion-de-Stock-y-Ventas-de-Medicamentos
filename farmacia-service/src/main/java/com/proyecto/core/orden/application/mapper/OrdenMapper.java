@@ -9,14 +9,12 @@ public class OrdenMapper {
 
     public OrdenResponseDTO toResponseDTO(Orden orden) {
         if (orden == null) return null;
-        Long idUsuario = orden.getUsuario() != null ? orden.getUsuario().getIdUsuario().longValue() : null;
-        String nombreUsuario = orden.getUsuario() != null ? orden.getUsuario().getNombre() : null;
         Long idSede = orden.getSede() != null ? orden.getSede().getIdSede() : null;
         String nombreSede = orden.getSede() != null ? orden.getSede().getNombre() : null;
         Long idSedeDestino = orden.getSedeDestino() != null ? orden.getSedeDestino().getIdSede() : null;
         String nombreSedeDestino = orden.getSedeDestino() != null ? orden.getSedeDestino().getNombre() : null;
         return new OrdenResponseDTO(
-            orden.getIdOrden(), idUsuario, nombreUsuario,
+            orden.getIdOrden(), orden.getIdUsuario(), orden.getNombreUsuario(),
             idSede, nombreSede,
             orden.getTipo() != null ? orden.getTipo().name() : null,
             orden.getEstado() != null ? orden.getEstado().name() : null,

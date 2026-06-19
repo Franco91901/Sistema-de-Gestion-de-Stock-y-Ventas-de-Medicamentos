@@ -46,8 +46,8 @@
 </dependency>
 
 		<dependency>
-			<groupId>com.mysql</groupId>
-			<artifactId>mysql-connector-j</artifactId>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
@@ -72,11 +72,6 @@
     <artifactId>spring-boot-starter-security</artifactId>
 </dependency>
 
-<!-- JWT via Spring OAuth2 Resource Server (Nimbus) -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-</dependency>
 		
 		
 		<dependency>
