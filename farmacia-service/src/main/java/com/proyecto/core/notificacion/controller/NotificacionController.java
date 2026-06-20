@@ -1,4 +1,4 @@
-package com.proyecto.core.notificacion.infrastructure.controller;
+package com.proyecto.core.notificacion.controller;
 
 import com.proyecto.core.notificacion.application.dto.NotificacionEstadisticasDTO;
 import com.proyecto.core.notificacion.application.dto.NotificacionResponseDTO;

@@ -4,12 +4,14 @@ import com.proyecto.core.lote.domain.model.Lote;
 import com.proyecto.core.lote.domain.repository.LoteRepository;
 import com.proyecto.core.medicamento.domain.model.MedicamentoSede;
 import com.proyecto.core.medicamento.domain.repository.MedicamentoSedeRepository;
+import com.proyecto.core.notificacion.application.dto.NotificacionEvento;
 import com.proyecto.core.notificacion.application.dto.NotificacionResponseDTO;
 import com.proyecto.core.notificacion.application.mapper.NotificacionMapper;
 import com.proyecto.core.notificacion.domain.model.EstadoNotificacion;
 import com.proyecto.core.notificacion.domain.model.Notificacion;
 import com.proyecto.core.notificacion.domain.model.TipoNotificacion;
 import com.proyecto.core.notificacion.domain.repository.NotificacionRepository;
+import com.proyecto.core.notificacion.messaging.producer.NotificacionPublisher;
 import com.proyecto.core.stock.application.service.FarmaceuticoConstants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class NotificacionServiceImpl implements NotificacionService {
     private final MedicamentoSedeRepository medicamentoSedeRepository;
     private final LoteRepository loteRepository;
     private final NotificacionMapper notificacionMapper;
+    private final NotificacionPublisher notificacionPublisher;
 
     @Override
     public List<NotificacionResponseDTO> listarNotificacionesPorSede(Long idSede) {
@@ -74,6 +77,20 @@ public class NotificacionServiceImpl implements NotificacionService {
                     medSede.getStockTotal(), FarmaceuticoConstants.UMBRAL_BAJO_STOCK);
             notificacionRepository.save(notificacionMapper.toEntityAuto(mensaje, TipoNotificacion.BAJO_STOCK, medSede));
 
+            NotificacionEvento event = NotificacionEvento.builder()
+                    .usuarioId(null)
+                    .titulo("Stock bajo")
+                    .mensaje("El stock del medicamento " + medSede.getMedicamento().getNombre() + " es bajo: " + medSede.getStockTotal())
+                    .tipo("STOCK")
+                    .idMedicamento(medSede.getMedicamento().getIdMedicamento())
+                    .nombreMedicamento(medSede.getMedicamento().getNombre())
+                    .stockMedicamento(medSede.getStockTotal())
+                    .idSede(medSede.getSede() != null ? medSede.getSede().getIdSede() : null)
+                    .nombreSede(medSede.getSede() != null ? medSede.getSede().getNombre() : null)
+                    .build();
+
+            notificacionPublisher.sendNotification(event);
+
         } else if (!bajoStock && existePendiente) {
             existentes.stream()
                     .filter(n -> n.getTipo() == TipoNotificacion.BAJO_STOCK
@@ -98,17 +115,34 @@ public class NotificacionServiceImpl implements NotificacionService {
         List<Notificacion> existentes = notificacionRepository.findByMedicamentoIdMedicamento(idMedicamento);
         boolean existePendiente = existentes.stream()
                 .anyMatch(n -> n.getTipo() == TipoNotificacion.PROXIMO_CADUCAR
-                            && n.getEstado() == EstadoNotificacion.PENDIENTE
-                            && n.getMensaje().contains(lote.getCodigoLote()));
+                        && n.getEstado() == EstadoNotificacion.PENDIENTE
+                        && n.getMensaje().contains(lote.getCodigoLote()));
 
         if (proximoCaducar && !existePendiente) {
             String mensaje = String.format("Lote %s del medicamento %s caduca en %d días (Caduca: %s)",
                     lote.getCodigoLote(), lote.getMedicamento().getNombre(),
                     diasParaCaducar, lote.getFechaCaducidad());
+
             medicamentoSedeRepository
                     .findByMedicamentoIdMedicamentoAndSedeIdSede(idMedicamento, lote.getSede().getIdSede())
-                    .ifPresent(ms -> notificacionRepository.save(
-                            notificacionMapper.toEntityAuto(mensaje, TipoNotificacion.PROXIMO_CADUCAR, ms)));
+                    .ifPresent(ms -> {
+                        notificacionRepository.save(
+                                notificacionMapper.toEntityAuto(mensaje, TipoNotificacion.PROXIMO_CADUCAR, ms));
+
+                        NotificacionEvento event = NotificacionEvento.builder()
+                                .usuarioId(null)
+                                .titulo("Próximo a caducar")
+                                .mensaje(mensaje)
+                                .tipo("CADUCIDAD")
+                                .idMedicamento(idMedicamento)
+                                .nombreMedicamento(lote.getMedicamento().getNombre())
+                                .stockMedicamento(ms.getStockTotal())
+                                .idSede(lote.getSede().getIdSede())
+                                .nombreSede(lote.getSede().getNombre())
+                                .build();
+
+                        notificacionPublisher.sendNotification(event);
+                    });
         }
     }
 
