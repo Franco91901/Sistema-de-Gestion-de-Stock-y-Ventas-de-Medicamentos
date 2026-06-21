@@ -180,3 +180,4 @@ SELECT setval(pg_get_serial_sequence('medicamento_sede','id'),(SELECT MAX(id) FR
 SELECT setval(pg_get_serial_sequence('orden',          'id_orden'),          (SELECT MAX(id_orden)          FROM orden));
 SELECT setval(pg_get_serial_sequence('detalle_orden',  'id_detalle'),        (SELECT MAX(id_detalle)        FROM detalle_orden));
 SELECT setval(pg_get_serial_sequence('notificacion',   'id_notificacion'),   (SELECT MAX(id_notificacion)   FROM notificacion));
+SELECT setval(pg_get_serial_sequence('movimiento_stock','id_movimiento'),   (SELECT MAX(id_movimiento)     FROM movimiento_stock));

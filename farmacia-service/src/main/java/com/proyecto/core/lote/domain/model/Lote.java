@@ -5,10 +5,8 @@ import java.time.LocalDate;
 import com.proyecto.core.medicamento.domain.model.Medicamento;
 import com.proyecto.core.sede.domain.model.Sede;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.*;
 
 @Entity
@@ -39,11 +37,9 @@ public class Lote {
 
     @NotNull(message = "La fecha de caducidad es obligatoria")
     @Column(name = "fecha_caducidad", nullable = false)
-    @FutureOrPresent(message = "La fecha de caducidad debe ser hoy o futura")
     private LocalDate fechaCaducidad;
 
     @NotNull(message = "El stock del lote es obligatorio")
-    @Positive(message = "El stock debe ser mayor a cero")
     @Column(name = "stock_lote", nullable = false)
     private Integer stockLote;
 
