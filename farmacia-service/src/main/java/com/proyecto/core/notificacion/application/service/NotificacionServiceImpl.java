@@ -4,6 +4,7 @@ import com.proyecto.core.lote.domain.model.Lote;
 import com.proyecto.core.lote.domain.repository.LoteRepository;
 import com.proyecto.core.medicamento.domain.model.MedicamentoSede;
 import com.proyecto.core.medicamento.domain.repository.MedicamentoSedeRepository;
+import com.proyecto.core.notificacion.application.dto.NotificacionEventoDTO;
 import com.proyecto.core.notificacion.application.dto.NotificacionResponseDTO;
 import com.proyecto.core.notificacion.application.mapper.NotificacionMapper;
 import com.proyecto.core.notificacion.domain.model.EstadoNotificacion;
@@ -11,6 +12,7 @@ import com.proyecto.core.notificacion.domain.model.Notificacion;
 import com.proyecto.core.notificacion.domain.model.TipoNotificacion;
 import com.proyecto.core.notificacion.domain.repository.NotificacionRepository;
 import com.proyecto.core.stock.application.service.FarmaceuticoConstants;
+import com.proyecto.messaging.producer.NotificacionProducer;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ public class NotificacionServiceImpl implements NotificacionService {
     private final MedicamentoSedeRepository medicamentoSedeRepository;
     private final LoteRepository loteRepository;
     private final NotificacionMapper notificacionMapper;
+    private final NotificacionProducer notificacionProducer;
 
     @Override
     public List<NotificacionResponseDTO> listarNotificacionesPorSede(Long idSede) {
@@ -74,6 +77,17 @@ public class NotificacionServiceImpl implements NotificacionService {
                     medSede.getStockTotal(), FarmaceuticoConstants.UMBRAL_BAJO_STOCK);
             notificacionRepository.save(notificacionMapper.toEntityAuto(mensaje, TipoNotificacion.BAJO_STOCK, medSede));
 
+            notificacionProducer.enviarNotificacion(NotificacionEventoDTO.builder()
+                    .titulo("Alerta de bajo stock")
+                    .mensaje(mensaje)
+                    .tipo(TipoNotificacion.BAJO_STOCK.name())
+                    .idMedicamento(medSede.getMedicamento().getIdMedicamento())
+                    .nombreMedicamento(medSede.getMedicamento().getNombre())
+                    .stockMedicamento(medSede.getStockTotal())
+                    .idSede(medSede.getSede().getIdSede())
+                    .nombreSede(medSede.getSede().getNombre())
+                    .build());
+
         } else if (!bajoStock && existePendiente) {
             existentes.stream()
                     .filter(n -> n.getTipo() == TipoNotificacion.BAJO_STOCK
@@ -109,6 +123,17 @@ public class NotificacionServiceImpl implements NotificacionService {
                     .findByMedicamentoIdMedicamentoAndSedeIdSede(idMedicamento, lote.getSede().getIdSede())
                     .ifPresent(ms -> notificacionRepository.save(
                             notificacionMapper.toEntityAuto(mensaje, TipoNotificacion.PROXIMO_CADUCAR, ms)));
+
+            notificacionProducer.enviarNotificacion(NotificacionEventoDTO.builder()
+                    .titulo("Alerta de caducidad próxima")
+                    .mensaje(mensaje)
+                    .tipo(TipoNotificacion.PROXIMO_CADUCAR.name())
+                    .idMedicamento(lote.getMedicamento().getIdMedicamento())
+                    .nombreMedicamento(lote.getMedicamento().getNombre())
+                    .stockMedicamento(lote.getStockLote())
+                    .idSede(lote.getSede().getIdSede())
+                    .nombreSede(lote.getSede().getNombre())
+                    .build());
         }
     }
 
