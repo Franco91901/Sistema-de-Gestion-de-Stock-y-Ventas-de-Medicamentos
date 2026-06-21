@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notificacion {
+    @Id
     private String id;
 
     private Long usuarioId;

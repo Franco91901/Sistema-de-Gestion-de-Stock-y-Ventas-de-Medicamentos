@@ -23,7 +23,6 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
 
-        // Allow login/register endpoints and public sedes list through without a token
         if (path.startsWith("/api/auth/") || path.equals("/api/sedes") || path.startsWith("/api/sedes/")) {
             return chain.filter(exchange);
         }
