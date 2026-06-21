@@ -170,3 +170,13 @@ INSERT INTO notificacion (id_notificacion, mensaje, fecha, estado, tipo, id_medi
 (13, 'Próximo a caducar: Insulina NPH, lote LOT-202606-123A (25/06/2026, 15u)',            '2026-05-31 07:06:00', 'PENDIENTE', 'PROXIMO_CADUCAR', 12, 3),
 (14, 'Stock crítico: Amoxicilina 500mg en Sede San Isidro — orden de transferencia generada', '2026-05-09 10:00:00', 'ATENDIDA', 'BAJO_STOCK',    3,  3)
 ON CONFLICT DO NOTHING;
+
+-- ------------------------------------------------------------
+-- RESET SEQUENCES (after explicit-ID inserts)
+-- ------------------------------------------------------------
+SELECT setval(pg_get_serial_sequence('medicamento',    'id_medicamento'),    (SELECT MAX(id_medicamento)    FROM medicamento));
+SELECT setval(pg_get_serial_sequence('lote',           'id_lote'),           (SELECT MAX(id_lote)           FROM lote));
+SELECT setval(pg_get_serial_sequence('medicamento_sede','id'),(SELECT MAX(id) FROM medicamento_sede));
+SELECT setval(pg_get_serial_sequence('orden',          'id_orden'),          (SELECT MAX(id_orden)          FROM orden));
+SELECT setval(pg_get_serial_sequence('detalle_orden',  'id_detalle'),        (SELECT MAX(id_detalle)        FROM detalle_orden));
+SELECT setval(pg_get_serial_sequence('notificacion',   'id_notificacion'),   (SELECT MAX(id_notificacion)   FROM notificacion));

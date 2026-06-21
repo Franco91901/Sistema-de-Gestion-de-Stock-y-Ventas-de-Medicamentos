@@ -23,8 +23,8 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
 
-        // Allow login/register endpoints through without a token
-        if (path.startsWith("/api/auth/")) {
+        // Allow login/register endpoints and public sedes list through without a token
+        if (path.startsWith("/api/auth/") || path.equals("/api/sedes") || path.startsWith("/api/sedes/")) {
             return chain.filter(exchange);
         }
 
@@ -42,6 +42,7 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
                     Object idSede = jwt.getClaim("idSede");
                     Object idUsuario = jwt.getClaim("idUsuario");
                     Object nombre = jwt.getClaim("nombre");
+                    Object roles = jwt.getClaim("roles");
 
                     ServerWebExchange mutated = exchange.mutate()
                             .request(r -> r
@@ -49,6 +50,7 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
                                     .header("X-User-IdSede", idSede != null ? idSede.toString() : "")
                                     .header("X-User-IdUsuario", idUsuario != null ? idUsuario.toString() : "")
                                     .header("X-User-Nombre", nombre != null ? nombre.toString() : "")
+                                    .header("X-User-Roles", roles != null ? roles.toString() : "")
                             )
                             .build();
 
