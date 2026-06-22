@@ -5,6 +5,7 @@ import com.proyecto.core.lote.domain.repository.LoteRepository;
 import com.proyecto.core.medicamento.domain.model.Medicamento;
 import com.proyecto.core.medicamento.domain.repository.MedicamentoRepository;
 import com.proyecto.core.medicamento.domain.repository.MedicamentoSedeRepository;
+import com.proyecto.core.notificacion.application.service.NotificacionService;
 import com.proyecto.core.sede.domain.model.Sede;
 import com.proyecto.core.sede.domain.repository.SedeRepository;
 import com.proyecto.core.stock.domain.model.MovimientoStock;
@@ -40,6 +41,7 @@ public class VentaServiceImpl implements VentaService {
     private final MovimientoStockRepository movimientoStockRepository;
     private final SedeRepository sedeRepository;
     private final AuthContext authContext;
+    private final NotificacionService notificacionService;
 
     @Override
     @Transactional
@@ -92,6 +94,7 @@ public class VentaServiceImpl implements VentaService {
                     .ifPresent(ms -> {
                         ms.setStockTotal(nuevoStock != null ? nuevoStock : 0);
                         medicamentoSedeRepository.save(ms);
+                        notificacionService.verificarNotificacionBajoStock(ms);
                     });
 
             BigDecimal subtotal = item.precioUnitario().multiply(BigDecimal.valueOf(item.cantidad()));

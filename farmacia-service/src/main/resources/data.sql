@@ -152,26 +152,6 @@ INSERT INTO detalle_orden (id_detalle, cantidad, estado, id_orden, id_medicament
 ON CONFLICT DO NOTHING;
 
 -- ------------------------------------------------------------
--- NOTIFICACIONES
--- ------------------------------------------------------------
-INSERT INTO notificacion (id_notificacion, mensaje, fecha, estado, tipo, id_medicamento, id_sede) VALUES
-(1,  'Stock crítico: Ibuprofeno 400mg en Sede San Isidro (12 unidades)',                    '2026-05-30 08:00:00', 'PENDIENTE', 'BAJO_STOCK',      2,  3),
-(2,  'Stock crítico: Amoxicilina 500mg en Sede San Isidro (8 unidades)',                    '2026-05-30 08:01:00', 'PENDIENTE', 'BAJO_STOCK',      3,  3),
-(3,  'Stock crítico: Atorvastatina 20mg en Sede San Isidro (4 unidades)',                   '2026-05-30 08:02:00', 'PENDIENTE', 'BAJO_STOCK',      7,  3),
-(4,  'Stock crítico: Azitromicina 500mg en Sede San Isidro (9 unidades)',                   '2026-05-30 08:03:00', 'PENDIENTE', 'BAJO_STOCK',      9,  3),
-(5,  'Stock crítico: Clonazepam 2mg en Sede San Isidro (3 unidades)',                       '2026-05-30 08:04:00', 'PENDIENTE', 'BAJO_STOCK',      10, 3),
-(6,  'Stock crítico: Salbutamol inhalador en Sede San Isidro (7 unidades)',                 '2026-05-30 08:05:00', 'PENDIENTE', 'BAJO_STOCK',      11, 3),
-(7,  'Próximo a caducar: Paracetamol 500mg, lote LOT-202606-011B (20/06/2026, 50u)',        '2026-05-31 07:00:00', 'PENDIENTE', 'PROXIMO_CADUCAR', 1,  1),
-(8,  'Próximo a caducar: Clonazepam 2mg, lote LOT-202606-101A (15/06/2026, 45u)',          '2026-05-31 07:01:00', 'PENDIENTE', 'PROXIMO_CADUCAR', 10, 1),
-(9,  'Próximo a caducar: Insulina NPH, lote LOT-202606-121A (28/06/2026, 60u)',            '2026-05-31 07:02:00', 'PENDIENTE', 'PROXIMO_CADUCAR', 12, 1),
-(10, 'Próximo a caducar: Salbutamol inhalador, lote LOT-202606-112A (25/06/2026, 20u)',    '2026-05-31 07:03:00', 'PENDIENTE', 'PROXIMO_CADUCAR', 11, 2),
-(11, 'Próximo a caducar: Insulina NPH, lote LOT-202606-122A (28/06/2026, 40u)',            '2026-05-31 07:04:00', 'PENDIENTE', 'PROXIMO_CADUCAR', 12, 2),
-(12, 'Próximo a caducar: Clonazepam 2mg, lote LOT-202606-103A (12/06/2026, 3u)',          '2026-05-31 07:05:00', 'PENDIENTE', 'PROXIMO_CADUCAR', 10, 3),
-(13, 'Próximo a caducar: Insulina NPH, lote LOT-202606-123A (25/06/2026, 15u)',            '2026-05-31 07:06:00', 'PENDIENTE', 'PROXIMO_CADUCAR', 12, 3),
-(14, 'Stock crítico: Amoxicilina 500mg en Sede San Isidro — orden de transferencia generada', '2026-05-09 10:00:00', 'ATENDIDA', 'BAJO_STOCK',    3,  3)
-ON CONFLICT DO NOTHING;
-
--- ------------------------------------------------------------
 -- RESET SEQUENCES (after explicit-ID inserts)
 -- ------------------------------------------------------------
 SELECT setval(pg_get_serial_sequence('medicamento',    'id_medicamento'),    (SELECT MAX(id_medicamento)    FROM medicamento));
@@ -179,5 +159,4 @@ SELECT setval(pg_get_serial_sequence('lote',           'id_lote'),           (SE
 SELECT setval(pg_get_serial_sequence('medicamento_sede','id'),(SELECT MAX(id) FROM medicamento_sede));
 SELECT setval(pg_get_serial_sequence('orden',          'id_orden'),          (SELECT MAX(id_orden)          FROM orden));
 SELECT setval(pg_get_serial_sequence('detalle_orden',  'id_detalle'),        (SELECT MAX(id_detalle)        FROM detalle_orden));
-SELECT setval(pg_get_serial_sequence('notificacion',   'id_notificacion'),   (SELECT MAX(id_notificacion)   FROM notificacion));
 SELECT setval(pg_get_serial_sequence('movimiento_stock','id_movimiento'),   (SELECT MAX(id_movimiento)     FROM movimiento_stock));

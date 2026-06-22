@@ -13,13 +13,16 @@ import com.proyecto.core.notificacion.domain.model.TipoNotificacion;
 import com.proyecto.core.notificacion.domain.repository.NotificacionRepository;
 import com.proyecto.core.stock.application.service.FarmaceuticoConstants;
 import com.proyecto.messaging.producer.NotificacionProducer;
+import com.proyecto.shared.security.AuthContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +34,7 @@ public class NotificacionServiceImpl implements NotificacionService {
     private final LoteRepository loteRepository;
     private final NotificacionMapper notificacionMapper;
     private final NotificacionProducer notificacionProducer;
+    private final AuthContext authContext;
 
     @Override
     public List<NotificacionResponseDTO> listarNotificacionesPorSede(Long idSede) {
@@ -63,39 +67,45 @@ public class NotificacionServiceImpl implements NotificacionService {
     public void verificarNotificacionBajoStock(MedicamentoSede medSede) {
         if (medSede == null) return;
 
-        boolean bajoStock = medSede.getStockTotal() < FarmaceuticoConstants.UMBRAL_BAJO_STOCK;
+        int stockActual = medSede.getStockTotal();
+        boolean bajoStock = stockActual < FarmaceuticoConstants.UMBRAL_BAJO_STOCK;
         Long idMedicamento = medSede.getMedicamento().getIdMedicamento();
 
         List<Notificacion> existentes = notificacionRepository.findByMedicamentoIdMedicamento(idMedicamento);
-        boolean existePendiente = existentes.stream()
-                .anyMatch(n -> n.getTipo() == TipoNotificacion.BAJO_STOCK
-                            && n.getEstado() == EstadoNotificacion.PENDIENTE);
+        Optional<Notificacion> pendiente = existentes.stream()
+                .filter(n -> n.getTipo() == TipoNotificacion.BAJO_STOCK
+                          && n.getEstado() == EstadoNotificacion.PENDIENTE)
+                .findFirst();
 
-        if (bajoStock && !existePendiente) {
+        if (bajoStock) {
             String mensaje = String.format("Medicamento %s tiene stock bajo en sede %s: %d unidades (mínimo: %d)",
                     medSede.getMedicamento().getNombre(), medSede.getSede().getNombre(),
-                    medSede.getStockTotal(), FarmaceuticoConstants.UMBRAL_BAJO_STOCK);
-            notificacionRepository.save(notificacionMapper.toEntityAuto(mensaje, TipoNotificacion.BAJO_STOCK, medSede));
+                    stockActual, FarmaceuticoConstants.UMBRAL_BAJO_STOCK);
+
+            if (pendiente.isPresent()) {
+                Notificacion n = pendiente.get();
+                n.setMensaje(mensaje);
+                n.setFecha(LocalDateTime.now());
+                notificacionRepository.save(n);
+            } else {
+                notificacionRepository.save(notificacionMapper.toEntityAuto(mensaje, TipoNotificacion.BAJO_STOCK, medSede));
+            }
 
             notificacionProducer.enviarNotificacion(NotificacionEventoDTO.builder()
+                    .usuarioId(authContext.getIdUsuario())
                     .titulo("Alerta de bajo stock")
                     .mensaje(mensaje)
                     .tipo(TipoNotificacion.BAJO_STOCK.name())
                     .idMedicamento(medSede.getMedicamento().getIdMedicamento())
                     .nombreMedicamento(medSede.getMedicamento().getNombre())
-                    .stockMedicamento(medSede.getStockTotal())
+                    .stockMedicamento(stockActual)
                     .idSede(medSede.getSede().getIdSede())
                     .nombreSede(medSede.getSede().getNombre())
                     .build());
 
-        } else if (!bajoStock && existePendiente) {
-            existentes.stream()
-                    .filter(n -> n.getTipo() == TipoNotificacion.BAJO_STOCK
-                              && n.getEstado() == EstadoNotificacion.PENDIENTE)
-                    .forEach(n -> {
-                        n.setEstado(EstadoNotificacion.ATENDIDA);
-                        notificacionRepository.save(n);
-                    });
+        } else if (pendiente.isPresent()) {
+            pendiente.get().setEstado(EstadoNotificacion.ATENDIDA);
+            notificacionRepository.save(pendiente.get());
         }
     }
 
@@ -125,6 +135,7 @@ public class NotificacionServiceImpl implements NotificacionService {
                             notificacionMapper.toEntityAuto(mensaje, TipoNotificacion.PROXIMO_CADUCAR, ms)));
 
             notificacionProducer.enviarNotificacion(NotificacionEventoDTO.builder()
+                    .usuarioId(authContext.getIdUsuario())
                     .titulo("Alerta de caducidad próxima")
                     .mensaje(mensaje)
                     .tipo(TipoNotificacion.PROXIMO_CADUCAR.name())
