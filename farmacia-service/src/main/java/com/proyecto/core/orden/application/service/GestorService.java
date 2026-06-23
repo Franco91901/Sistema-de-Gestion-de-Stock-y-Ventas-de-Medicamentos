@@ -26,6 +26,7 @@ public interface GestorService {
     Orden generarOrdenDesdeNotificacion(Long idGestor, Long idNotificacion, Integer cantidadSolicitada);
     Orden crearOrden(com.proyecto.core.orden.application.dto.OrdenRequestDTO dto, Long idGestor);
     List<Orden> listarOrdenesPorGestor(Long idGestor);
+    List<Orden> listarTodasLasOrdenes();
     List<com.proyecto.core.orden.domain.model.DetalleOrden> obtenerDetallesDeOrden(Long idOrden);
     void aprobarOrden(Long idOrden);
     void rechazarOrden(Long idOrden);

@@ -199,6 +199,11 @@ public class GestorServiceImpl implements GestorService {
     }
 
     @Override
+    public List<Orden> listarTodasLasOrdenes() {
+        return ordenRepository.findAll();
+    }
+
+    @Override
     public List<DetalleOrden> obtenerDetallesDeOrden(Long idOrden) {
         return detalleOrdenRepository.findByOrdenIdOrden(idOrden);
     }

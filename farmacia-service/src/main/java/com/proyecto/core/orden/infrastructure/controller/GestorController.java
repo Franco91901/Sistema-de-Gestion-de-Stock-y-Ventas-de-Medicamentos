@@ -94,14 +94,14 @@ public class GestorController {
 
     @GetMapping("/ordenes")
     public ResponseEntity<ApiResponse<List<OrdenResponseDTO>>> listarOrdenes() {
-        List<OrdenResponseDTO> ordenes = gestorService.listarOrdenesPorGestor(authContext.getIdUsuario())
+        List<OrdenResponseDTO> ordenes = gestorService.listarTodasLasOrdenes()
                 .stream().map(ordenMapper::toResponseDTO).toList();
         return ResponseEntity.ok(ApiResponse.ok(ordenes));
     }
 
     @GetMapping("/ordenes/{id}")
     public ResponseEntity<ApiResponse<OrdenDetalleDTO>> detalleOrden(@PathVariable Long id) {
-        Orden orden = gestorService.listarOrdenesPorGestor(authContext.getIdUsuario()).stream()
+        Orden orden = gestorService.listarTodasLasOrdenes().stream()
                 .filter(o -> o.getIdOrden().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new EntityNotFoundException(ExceptionConstants.ORDEN_NO_ENCONTRADA));
