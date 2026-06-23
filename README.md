@@ -179,3 +179,10 @@ docker-compose up -d
 5. `api-gateway`
 6. `notificaciones-service`
 7. `soapAnuncio-service`
+
+---
+
+## Vista previa
+
+https://github.com/user-attachments/assets/6747c4a8-babb-4e5f-baf3-08895d3041f2
+
